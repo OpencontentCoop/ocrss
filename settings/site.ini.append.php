@@ -2,5 +2,6 @@
 
 [RoleSettings]
 PolicyOmitList[]=feed/rss
+PolicyOmitList[]=feed/rss
 
 */ ?>
