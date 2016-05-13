@@ -13,6 +13,7 @@ class OCRSSHandler
     {
         $this->identifier = $identifier;
         $this->handler = $handler;
+        $this->handler->setIdentifier($identifier);
     }
 
     public static function instance( $identifier, $factoryParams = null )

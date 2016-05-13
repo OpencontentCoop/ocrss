@@ -71,7 +71,7 @@ class ezcFeedCustomTextModule extends ezcFeedModule
 
     public static function getNamespace()
     {
-        return 'http://purl.org/rss/1.0/modules/content/';
+        return 'http://namespace.rss.opencontent.it/custom';
     }
 
 

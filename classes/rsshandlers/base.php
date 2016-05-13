@@ -2,6 +2,10 @@
 
 abstract class OCRSSHandlerBase
 {
+    protected $identifier;
+
+    protected $customParameters = array();
+
     /**
      * @return eZContentObjectTreeNode[]
      */
@@ -43,6 +47,7 @@ abstract class OCRSSHandlerBase
         $contentFields = (array) eZINI::instance( 'ocrss.ini' )->variable( 'FeedSettings', 'content' );
         $categoryFields = (array) eZINI::instance( 'ocrss.ini' )->variable( 'FeedSettings', 'category' );
         $enclosureFields = (array) eZINI::instance( 'ocrss.ini' )->variable( 'FeedSettings', 'enclosure' );        
+        /** @var eZContentObjectAttribute[] $dataMap */
         $dataMap = $node->attribute( 'data_map' );
         return array(
             'title' => $this->selectField( $titleFields, $dataMap ),
@@ -81,6 +86,11 @@ abstract class OCRSSHandlerBase
     {
         $locale = eZLocale::instance();
         return $locale->httpLocaleCode();
+    }
+
+    public function setIdentifier( $identifier )
+    {
+        $this->identifier = $identifier;
     }
 
     /**
@@ -379,6 +389,81 @@ abstract class OCRSSHandlerBase
      */
     protected function decorateFeedEntryElement($item, $node)
     {
+        $customs = $this->getCustomElementParameters($node);
+        if (!empty( $customs )) {
+            /** @var eZContentObjectAttribute[] $dataMap */
+            $dataMap = $node->attribute('data_map');
+            foreach( $customs as $namespace => $attributeList ){
+                $custom = $this->addCustomTextFeedEntryElement($item, $namespace);
+                foreach($attributeList as $attributeIdentifier){
+                    if (isset($dataMap[$attributeIdentifier])){
+
+                        $attributeContent =  $dataMap[$attributeIdentifier]->attribute( 'content' );
+                        if ( $attributeContent instanceof eZXMLText )
+                        {
+                            $text = $attributeContent->attribute( 'output' )->attribute( 'output_text' );
+                        }
+                        elseif ( $attributeContent instanceof eZKeyword )
+                        {
+                            $text = $attributeContent->keywordString();
+                        }
+                        elseif ( $attributeContent instanceof eZTags )
+                        {
+                            $text = $attributeContent->attribute( 'keyword_string' );
+                        }
+                        else
+                        {
+                            $text = $dataMap[$attributeIdentifier]->toString();
+                        }
+
+                        if (!empty($text)){
+                            $custom->{$attributeIdentifier} = $text;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param eZContentObjectTreeNode $node
+     *
+     * @return array
+     */
+    protected function getCustomElementParameters($node)
+    {
+        $customParameterKey = $this->identifier . '.' . $node->attribute('class_identifier');
+        if (!isset( $this->customParameters[$customParameterKey] )) {
+
+            $this->customParameters[$customParameterKey] = array();
+
+            $rssIniCustoms = eZINI::instance('ocrss.ini')->variable('CustomFeedEntryElement', 'EnabledCustoms');
+
+            if (isset( $rssIniCustoms[$this->identifier] )) {
+
+
+                $settingIdentifierList = explode(';', $rssIniCustoms[$this->identifier]);
+                foreach ($settingIdentifierList as $settingIdentifier) {
+                    $settingIdentifier = trim($settingIdentifier);
+                    if (!eZINI::instance('ocrss.ini')->hasGroup('CustomFeedEntryElement_' . $settingIdentifier)) {
+                        continue;
+                    }
+
+                    $defaults = array(
+                        'AvailableForClasses' => array(),
+                        'AvailableForAttributes' => array(),
+                        'Namespace' => $settingIdentifier,
+                    );
+
+                    $rssIniCustomsSetting = array_merge($defaults,
+                        eZINI::instance('ocrss.ini')->group('CustomFeedEntryElement_' . $settingIdentifier));
+                    if (in_array($node->attribute('class_identifier'), $rssIniCustomsSetting['AvailableForClasses'])) {
+                        $this->customParameters[$customParameterKey][$rssIniCustomsSetting['Namespace']] = $rssIniCustomsSetting['AvailableForAttributes'];
+                    }
+                }
+            }
+        }
+        return $this->customParameters[$customParameterKey];
     }
 
     /**

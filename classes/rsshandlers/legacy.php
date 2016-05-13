@@ -280,6 +280,7 @@ class LegacyRSSHandler extends OCRSSHandlerBase
 
     protected function decorateFeed(ezcFeed $feed)
     {
+        parent::decorateFeed($feed);
     }
 
     /**
@@ -288,6 +289,7 @@ class LegacyRSSHandler extends OCRSSHandlerBase
      */
     protected function decorateFeedEntryElement($item, $node)
     {
+        parent::decorateFeedEntryElement($item, $node);
     }
 
     /**
