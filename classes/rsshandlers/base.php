@@ -437,32 +437,37 @@ abstract class OCRSSHandlerBase
 
             $this->customParameters[$customParameterKey] = array();
 
-            $rssIniCustoms = eZINI::instance('ocrss.ini')->variable('CustomFeedEntryElement', 'EnabledCustoms');
+            if (eZINI::instance('ocrss.ini')->hasVariable('CustomFeedEntryElement', 'EnabledCustoms')) {
 
-            if (isset( $rssIniCustoms[$this->identifier] )) {
+                $rssIniCustoms = eZINI::instance('ocrss.ini')->variable('CustomFeedEntryElement', 'EnabledCustoms');
+
+                if (isset( $rssIniCustoms[$this->identifier] )) {
 
 
-                $settingIdentifierList = explode(';', $rssIniCustoms[$this->identifier]);
-                foreach ($settingIdentifierList as $settingIdentifier) {
-                    $settingIdentifier = trim($settingIdentifier);
-                    if (!eZINI::instance('ocrss.ini')->hasGroup('CustomFeedEntryElement_' . $settingIdentifier)) {
-                        continue;
-                    }
+                    $settingIdentifierList = explode(';', $rssIniCustoms[$this->identifier]);
+                    foreach ($settingIdentifierList as $settingIdentifier) {
+                        $settingIdentifier = trim($settingIdentifier);
+                        if (!eZINI::instance('ocrss.ini')->hasGroup('CustomFeedEntryElement_' . $settingIdentifier)) {
+                            continue;
+                        }
 
-                    $defaults = array(
-                        'AvailableForClasses' => array(),
-                        'AvailableForAttributes' => array(),
-                        'Namespace' => $settingIdentifier,
-                    );
+                        $defaults = array(
+                            'AvailableForClasses' => array(),
+                            'AvailableForAttributes' => array(),
+                            'Namespace' => $settingIdentifier,
+                        );
 
-                    $rssIniCustomsSetting = array_merge($defaults,
-                        eZINI::instance('ocrss.ini')->group('CustomFeedEntryElement_' . $settingIdentifier));
-                    if (in_array($node->attribute('class_identifier'), $rssIniCustomsSetting['AvailableForClasses'])) {
-                        $this->customParameters[$customParameterKey][$rssIniCustomsSetting['Namespace']] = $rssIniCustomsSetting['AvailableForAttributes'];
+                        $rssIniCustomsSetting = array_merge($defaults,
+                            eZINI::instance('ocrss.ini')->group('CustomFeedEntryElement_' . $settingIdentifier));
+                        if (in_array($node->attribute('class_identifier'),
+                            $rssIniCustomsSetting['AvailableForClasses'])) {
+                            $this->customParameters[$customParameterKey][$rssIniCustomsSetting['Namespace']] = $rssIniCustomsSetting['AvailableForAttributes'];
+                        }
                     }
                 }
             }
         }
+
         return $this->customParameters[$customParameterKey];
     }
 
