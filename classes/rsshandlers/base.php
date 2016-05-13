@@ -109,6 +109,8 @@ abstract class OCRSSHandlerBase
             ENT_NOQUOTES, 'UTF-8'
         );
 
+        $this->decorateFeed($feed);
+
         $imageURL = $this->getFeedImageUrl();
         if ( $imageURL !== false )
         {
@@ -358,11 +360,40 @@ abstract class OCRSSHandlerBase
                 
                 $item->published = $object->attribute( 'published' );
                 $item->updated = $object->attribute( 'published' );
+
+                $this->decorateFeedEntryElement($item, $node);
             }
         }
         $rss = $feed->generate( 'rss2' );
         //$rss = preg_replace( '#(src|href)=([\'"])/#i',  sprintf( "$1=$2http:/%s/", $this->getFeedBaseUrl() ), $rss );
         return $rss;
+    }
+
+    protected function decorateFeed(ezcFeed $feed)
+    {
+    }
+
+    /**
+     * @param ezcFeedEntryElement $item
+     * @param eZContentObjectTreeNode $node
+     */
+    protected function decorateFeedEntryElement($item, $node)
+    {
+    }
+
+    /**
+     * @param ezcFeedEntryElement $item
+     * @param string $namespacePrefix
+     * @return ezcFeedCustomTextModule
+     */
+    protected function addCustomTextFeedEntryElement($item, $namespacePrefix)
+    {
+        ezcFeed::registerModule($namespacePrefix, 'ezcFeedCustomTextModule', $namespacePrefix);
+        /** @var ezcFeedCustomTextModule $custom */
+        $custom = $item->addModule($namespacePrefix);
+        $custom->setNamespacePrefix($namespacePrefix);
+
+        return $custom;
     }
 
     protected function urlEncodePath( $url )
