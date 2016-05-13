@@ -9,6 +9,11 @@ class OCRSSHandler
 
     private $identifier;
 
+    /**
+     * @var eZUser
+     */
+    private static $currentUser;
+
     protected function __construct( $identifier, OCRSSHandlerBase $handler )
     {
         $this->identifier = $identifier;
@@ -59,7 +64,6 @@ class OCRSSHandler
     
     public function printRSS()
     {
-        //@todo anonymous?
         $config = eZINI::instance( 'site.ini' );
 
         $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
@@ -88,7 +92,9 @@ class OCRSSHandler
 
             if ( !$cacheFile->exists() or ( time() - $cacheFile->mtime() > $cacheTime ) )
             {
+                $this->enterAnonymous();
                 $rssContent = $this->handler->generateFeed();
+                $this->exitAnonymous();
                 $cacheFile->storeContents( $rssContent, 'ocrsscache', 'xml' );
             }
             else
@@ -121,9 +127,31 @@ class OCRSSHandler
         header( 'Last-Modified: ' . $lastModified );
         header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
         header( 'Content-Length: ' . strlen( $rssContent ) );
-        header( 'X-Powered-By: ' . eZPublishSDK::EDITION );
+        header( 'X-Powered-By: eZ Publish' );
 
         echo $rssContent;
+    }
+
+    protected function enterAnonymous()
+    {
+        self::$currentUser = eZUser::currentUser();
+        /** @var eZUser $anonymous */
+        $anonymous = eZUser::fetch( eZUser::anonymousId() );
+        eZUser::setCurrentlyLoggedInUser(
+            $anonymous,
+            $anonymous->attribute( 'contentobject_id' ),
+            1
+        );
+
+    }
+
+    protected function exitAnonymous()
+    {
+        eZUser::setCurrentlyLoggedInUser(
+            self::$currentUser,
+            self::$currentUser->attribute( 'contentobject_id' ),
+            1
+        );
     }
 }
 
