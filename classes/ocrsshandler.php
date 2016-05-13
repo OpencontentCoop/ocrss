@@ -58,9 +58,12 @@ class OCRSSHandler
     }
     
     public function printRSS()
-    {        
+    {
         //@todo anonymous?
         $config = eZINI::instance( 'site.ini' );
+
+        $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
+
         $cacheTime = intval( $config->variable( 'RSSSettings', 'CacheTime' ) );
         if ( $config->variable( 'DebugSettings', 'DebugOutput' ) == 'enabled' )
         {
@@ -112,6 +115,13 @@ class OCRSSHandler
                 $rssContent = $cacheFile->fetchContents();
             }
         }
+
+        // Set header settings
+        $httpCharset = eZTextCodec::httpCharset();
+        header( 'Last-Modified: ' . $lastModified );
+        header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
+        header( 'Content-Length: ' . strlen( $rssContent ) );
+        header( 'X-Powered-By: ' . eZPublishSDK::EDITION );
 
         echo $rssContent;
     }
