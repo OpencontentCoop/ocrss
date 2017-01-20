@@ -63,16 +63,20 @@ class LegacyRSSHandler extends OCRSSHandlerBase
 
         // required for ATOM
         $feed->updated = time();
-        $author = $feed->add('author');
-        $author->email = htmlspecialchars(
-            $config->variable('MailSettings', 'AdminEmail'),
-            ENT_NOQUOTES, 'UTF-8'
-        );
+
         $creatorObject = eZContentObject::fetch($this->rssExport->attribute('creator_id'));
         if ($creatorObject instanceof eZContentObject) {
+            $author = $feed->add('author');
             $author->name = htmlspecialchars(
                 $creatorObject->attribute('name'), ENT_NOQUOTES, 'UTF-8'
             );
+            $user = eZUser::fetch($creatorObject->attribute('id'));
+            if ($user instanceof eZUser){
+                $author->email = htmlspecialchars(
+                    $user->attribute('email'),
+                    ENT_NOQUOTES, 'UTF-8'
+                );
+            }
         }
 
         $imageURL = $this->rssExport->fetchImageURL();
@@ -183,7 +187,13 @@ class LegacyRSSHandler extends OCRSSHandlerBase
                     $author->name = htmlspecialchars(
                         $itemCreatorObject->attribute('name'), ENT_NOQUOTES, 'UTF-8'
                     );
-                    $author->email = $config->variable('MailSettings', 'AdminEmail');
+                    $user = eZUser::fetch($itemCreatorObject->attribute('id'));
+                    if ($user instanceof eZUser){
+                        $author->email = htmlspecialchars(
+                            $user->attribute('email'),
+                            ENT_NOQUOTES, 'UTF-8'
+                        );
+                    }
                 }
 
                 // description RSS element with respective class attribute content
