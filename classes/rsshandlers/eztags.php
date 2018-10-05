@@ -6,22 +6,22 @@ abstract class eZTagsRSSHandler extends OCRSSHandlerBase
     /**
      * @var eZTagsObject[]
      */
-    private $tags;
+    protected $tags;
 
     /**
      * @var eZTagsObject
      */
-    private $mainTag;
+    protected $mainTag;
 
     /**
      * @var array[]
      */
-    private $classAttributeIdentifiers;
+    protected $classAttributeIdentifiers;
 
     /**
      * @var int[]
      */
-    private $subTreeArray;
+    protected $subTreeArray;
 
     /**
      * @param $tag
