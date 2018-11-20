@@ -124,11 +124,52 @@ class OCRSSHandler
 
         // Set header settings
         $httpCharset = eZTextCodec::httpCharset();
-        header( 'Last-Modified: ' . $lastModified );
+        if (eZINI::instance( 'ocrss.ini' )->variable('GeneralSettings', 'Cors') == 'enabled')
+        {
+            // Allow from any origin
+            if (isset($_SERVER['HTTP_ORIGIN'])) {
+                header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+                //header('Access-Control-Allow-Credentials: true');
+                header('Access-Control-Max-Age: 3600');    // cache for 1 hour
+            }
+
+            // Access-Control headers are received during OPTIONS requests
+            if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+                header("Accept: */*");
+                header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
+                header( "Accept-Language: *" );
+                header( "Content-Language: it-IT" );
+
+                // Access-Control-Allow-Methods
+                if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+                {
+                    header("Access-Control-Allow-Methods: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']}, OPTIONS");
+                }
+                else
+                {
+                    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+                }
+
+                // Access-Control-Allow-Headers
+                if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+                {
+                    header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+                }
+                else
+                {
+                    header('Access-Control-Allow-Headers: Authorization,DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type');
+                }
+                eZExecution::cleanExit();
+            }
+        }
+
+        header("Accept: */*");
         header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
+        header( "Accept-Language: *" );
+        header( "Content-Language: it-IT" );
+        header( 'Last-Modified: ' . $lastModified );
         header( 'Content-Length: ' . strlen( $rssContent ) );
         header( 'X-Powered-By: eZ Publish' );
-
         echo $rssContent;
     }
 
