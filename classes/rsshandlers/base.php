@@ -1,5 +1,8 @@
 <?php
 
+use Opencontent\Opendata\Api\AttributeConverterLoader;
+use Opencontent\Opendata\Api\Values\Content;
+
 abstract class OCRSSHandlerBase
 {
     protected $identifier;
@@ -154,6 +157,12 @@ abstract class OCRSSHandlerBase
                 $object = $node->attribute( 'object' );
                 /** @var eZContentObjectAttribute[] $dataMap */
                 $dataMap = $object->dataMap();
+
+                try {
+                    $apiContent = Content::createFromEzContentObject($object);
+                }catch (Throwable $e){
+                    $apiContent = new Content([]);
+                }
                 
                 $attributeMapping = $this->getAttributeMappings( $node );
 
@@ -265,7 +274,21 @@ abstract class OCRSSHandlerBase
                     }
                     else
                     {
-                        $itemCategoryText = $categoryContent;
+                        try {
+                            $classIdentifier = $object->attribute('class_identifier');
+                            $attributeIdentifier = $category->attribute('contentclass_attribute_identifier');
+                            $language = eZLocale::currentLocaleCode();
+                            $itemCategoryText = AttributeConverterLoader::load(
+                                $classIdentifier,
+                                $attributeIdentifier,
+                                $category->attribute('data_type_string')
+                            )->toCSVString(
+                                $apiContent->data[$language][$attributeIdentifier]['content'] ?? '',
+                                $language
+                            );
+                        }catch (Throwable $e){
+                            $itemCategoryText = false;
+                        }
                     }
 
                     if ( $itemCategoryText )
@@ -367,9 +390,10 @@ abstract class OCRSSHandlerBase
                         $module->encoded = $itemContentText;
                     }
                 }
-                
-                $item->published = $object->attribute( 'published' );
-                $item->updated = $object->attribute( 'published' );
+                $published = (int)$object->attribute('published');
+                $firstVersion = $object->version(1);
+                $item->published = $this->convertToDateTime($firstVersion ? (int)$firstVersion->attribute('created') : $published);
+                $item->updated = $this->convertToDateTime((int)$object->attribute('modified'));
 
                 $this->decorateFeedEntryElement($item, $node);
             }
@@ -377,6 +401,12 @@ abstract class OCRSSHandlerBase
         $rss = $feed->generate( 'rss2' );
         //$rss = preg_replace( '#(src|href)=([\'"])/#i',  sprintf( "$1=$2http:/%s/", $this->getFeedBaseUrl() ), $rss );
         return $rss;
+    }
+
+    protected function convertToDateTime(int $timestamp)
+    {
+        return DateTime::createFromFormat('U', $timestamp)
+            ->setTimezone(new DateTimeZone('Europe/Rome'));
     }
 
     protected function decorateFeed(ezcFeed $feed)

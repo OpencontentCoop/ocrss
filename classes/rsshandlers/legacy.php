@@ -1,5 +1,8 @@
 <?php
 
+use Opencontent\Opendata\Api\AttributeConverterLoader;
+use Opencontent\Opendata\Api\Values\Content;
+
 class LegacyRSSHandler extends OCRSSHandlerBase
 {
 
@@ -111,7 +114,13 @@ class LegacyRSSHandler extends OCRSSHandlerBase
                     // if the node is hidden skip past it and don't add it to the RSS export
                     continue;
                 }
+                /** @var eZContentObject $object */
                 $object = $node->attribute('object');
+                try {
+                    $apiContent = Content::createFromEzContentObject($object);
+                }catch (Throwable $e){
+                    $apiContent = new Content([]);
+                }
                 $dataMap = $object->dataMap();
                 if ($useURLAlias === true) {
                     $nodeURL = $this->rssExport->urlEncodePath($baseItemURL . $node->urlAlias());
@@ -232,7 +241,21 @@ class LegacyRSSHandler extends OCRSSHandlerBase
                     } elseif ($categoryContent instanceof eZKeyword) {
                         $itemCategoryText = $categoryContent->keywordString();
                     } else {
-                        $itemCategoryText = $categoryContent;
+                        try {
+                            $classIdentifier = $object->attribute('class_identifier');
+                            $attributeIdentifier = $category->attribute('contentclass_attribute_identifier');
+                            $language = eZLocale::currentLocaleCode();
+                            $itemCategoryText = AttributeConverterLoader::load(
+                                $classIdentifier,
+                                $attributeIdentifier,
+                                $category->attribute('data_type_string')
+                            )->toCSVString(
+                                $apiContent->data[$language][$attributeIdentifier]['content'] ?? '',
+                                $language
+                            );
+                        }catch (Throwable $e){
+                            $itemCategoryText = false;
+                        }
                     }
 
                     if ($itemCategoryText) {
@@ -277,9 +300,10 @@ class LegacyRSSHandler extends OCRSSHandlerBase
                         $enc->url = htmlspecialchars($encItemURL, ENT_NOQUOTES, 'UTF-8');
                     }
                 }
-
-                $item->published = $object->attribute('published');
-                $item->updated = $object->attribute('published');
+                $published = (int)$object->attribute('published');
+                $firstVersion = $object->version(1);
+                $item->published = $this->convertToDateTime($firstVersion ? (int)$firstVersion->attribute('created') : $published);
+                $item->updated = $this->convertToDateTime((int)$object->attribute('modified'));
 
                 $this->decorateFeedEntryElement($item, $node);
             }

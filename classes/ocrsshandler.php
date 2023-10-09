@@ -36,6 +36,7 @@ class OCRSSHandler
         {
             $handlerClassName = $handlers['CustomHandlers'][$identifier];
         }
+
         if ( $handlerClassName )
         {
             if ( class_exists( $handlerClassName ) )
@@ -194,6 +195,19 @@ class OCRSSHandler
             1
         );
     }
-}
 
-?>
+    public static function addLegacyRssRedirect()
+    {
+        $wildcard = eZURLWildcard::fetchBySourceURL('rss/feed/*', false);
+        if ($wildcard) {
+            $row = [
+                'source_url' => 'rss/feed/*',
+                'destination_url' => '/feed/rss/{1}',
+                'type' => eZURLWildcard::TYPE_DIRECT,
+            ];
+            $wildcard = new eZURLWildcard($row);
+            $wildcard->store();
+            eZURLWildcard::expireCache();
+        }
+    }
+}
