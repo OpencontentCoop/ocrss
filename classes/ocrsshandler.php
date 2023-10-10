@@ -199,7 +199,7 @@ class OCRSSHandler
     public static function addLegacyRssRedirect()
     {
         $wildcard = eZURLWildcard::fetchBySourceURL('rss/feed/*', false);
-        if ($wildcard) {
+        if (!$wildcard) {
             $row = [
                 'source_url' => 'rss/feed/*',
                 'destination_url' => '/feed/rss/{1}',
