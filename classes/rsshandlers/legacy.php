@@ -300,9 +300,8 @@ class LegacyRSSHandler extends OCRSSHandlerBase
                         $enc->url = htmlspecialchars($encItemURL, ENT_NOQUOTES, 'UTF-8');
                     }
                 }
-                $published = (int)$object->attribute('published');
-                $firstVersion = $object->version(1);
-                $item->published = $this->convertToDateTime($firstVersion ? (int)$firstVersion->attribute('created') : $published);
+                
+                $item->published = $this->convertToDateTime((int)$object->attribute('published'));
                 $item->updated = $this->convertToDateTime((int)$object->attribute('modified'));
 
                 $this->decorateFeedEntryElement($item, $node);

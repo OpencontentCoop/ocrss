@@ -390,9 +390,7 @@ abstract class OCRSSHandlerBase
                         $module->encoded = $itemContentText;
                     }
                 }
-                $published = (int)$object->attribute('published');
-                $firstVersion = $object->version(1);
-                $item->published = $this->convertToDateTime($firstVersion ? (int)$firstVersion->attribute('created') : $published);
+                $item->published = $this->convertToDateTime((int)$object->attribute('published'));
                 $item->updated = $this->convertToDateTime((int)$object->attribute('modified'));
 
                 $this->decorateFeedEntryElement($item, $node);
